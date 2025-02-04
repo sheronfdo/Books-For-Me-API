@@ -1,11 +1,10 @@
 package com.jamith.booksformeapi.service;
 
 
-import com.jamith.booksformeapi.dto.responseDTO.SellerSignUpDTO;
-import com.jamith.booksformeapi.entity.Seller;
-import org.springframework.stereotype.Service;
+import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpDTO;
+import org.springframework.http.ResponseEntity;
 
 
 public interface SellerService {
-     String registerSeller(SellerSignUpDTO seller);
+     ResponseEntity<Object> registerSeller(SellerSignUpDTO seller);
 }

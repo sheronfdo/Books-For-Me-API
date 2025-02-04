@@ -1,4 +1,4 @@
-package com.jamith.booksformeapi.util;
+package com.jamith.booksformeapi.enums;
 
 public enum SellerType {
     COMPANY, INDIVIDUAL

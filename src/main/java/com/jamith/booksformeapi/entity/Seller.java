@@ -1,7 +1,7 @@
 package com.jamith.booksformeapi.entity;
 
-import com.jamith.booksformeapi.util.SellerType;
-import com.jamith.booksformeapi.util.UserRole;
+import com.jamith.booksformeapi.enums.SellerType;
+import com.jamith.booksformeapi.enums.UserRole;
 import lombok.Data;
 
 import java.util.Date;

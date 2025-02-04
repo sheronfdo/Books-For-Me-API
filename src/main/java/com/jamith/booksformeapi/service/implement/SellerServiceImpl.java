@@ -6,22 +6,25 @@ import com.google.cloud.firestore.WriteResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
-import com.jamith.booksformeapi.dto.responseDTO.SellerSignUpDTO;
+import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpDTO;
+import com.jamith.booksformeapi.dto.responseDTO.SellerSignUpResponseDTO;
 import com.jamith.booksformeapi.entity.Seller;
 import com.jamith.booksformeapi.service.SellerService;
-import com.jamith.booksformeapi.util.DateUtil;
-import com.jamith.booksformeapi.util.SellerType;
-import com.jamith.booksformeapi.util.UserRole;
+import com.jamith.booksformeapi.utils.DateUtil;
+import com.jamith.booksformeapi.enums.SellerType;
+import com.jamith.booksformeapi.enums.UserRole;
+import com.jamith.booksformeapi.utils.ResponseUtil;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class SellerServiceImpl implements SellerService {
 
-    public String registerSeller(SellerSignUpDTO sellerSignUpDTO) {
+    public ResponseEntity<Object> registerSeller(SellerSignUpDTO sellerSignUpDTO) {
 
         Firestore db = FirestoreClient.getFirestore();
         try {
@@ -64,10 +67,13 @@ public class SellerServiceImpl implements SellerService {
             seller.setCreatedAt(DateUtil.fromFirestoreTimestamp());
 
             ApiFuture<WriteResult> collectionsApiFuture = db.collection("sellers").document(seller.getSellerId()).set(seller);
-            return "Seller registered at: " + collectionsApiFuture.get().getUpdateTime();
+            SellerSignUpResponseDTO sellerSignUpResponseDTO = new SellerSignUpResponseDTO();
+            sellerSignUpResponseDTO.setId(userRecord.getUid());
+            sellerSignUpResponseDTO.setCreatedTime(collectionsApiFuture.get().getUpdateTime().toDate());
+            return ResponseUtil.generateSuccessResponse("Seller Registered Successfully", sellerSignUpResponseDTO);
         } catch (Exception e) {
             e.printStackTrace();
-            return "Error registering seller";
+            return ResponseUtil.generateErrorResponse(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.jamith.booksformeapi.util;
+package com.jamith.booksformeapi.utils;
 
 import com.google.cloud.Timestamp;
 
