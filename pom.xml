@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.jamith</groupId>
 	<artifactId>booksformeapi</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>V1.0.1</version>
 	<name>Books For Me API</name>
 	<description>Books For Me API serves for customer and seller and super admin</description>
 	<url/>
@@ -34,11 +34,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<optional>true</optional>
+			<version>1.18.36</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
