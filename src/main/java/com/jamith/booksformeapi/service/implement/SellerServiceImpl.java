@@ -14,6 +14,7 @@ import com.jamith.booksformeapi.utils.DateUtil;
 import com.jamith.booksformeapi.enums.SellerType;
 import com.jamith.booksformeapi.enums.UserRole;
 import com.jamith.booksformeapi.utils.ResponseUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,10 +24,9 @@ import java.util.Map;
 
 @Service
 public class SellerServiceImpl implements SellerService {
+    Firestore db = FirestoreClient.getFirestore();
 
     public ResponseEntity<Object> registerSeller(SellerSignUpDTO sellerSignUpDTO) {
-
-        Firestore db = FirestoreClient.getFirestore();
         try {
             UserRecord.CreateRequest request = new UserRecord.CreateRequest()
                     .setEmail(sellerSignUpDTO.getEmail())
