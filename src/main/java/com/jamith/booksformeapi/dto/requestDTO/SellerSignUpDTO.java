@@ -18,6 +18,4 @@ public class SellerSignUpDTO {
     private String addressCountry;
     private String companyName;
     private String businessRegistrationNumber;
-    private Date createdAt;
-    private String role;
 }

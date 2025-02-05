@@ -2,8 +2,10 @@ package com.jamith.booksformeapi.service.implement;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.FirestoreException;
 import com.google.cloud.firestore.WriteResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
 import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpDTO;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class SellerServiceImpl implements SellerService {
@@ -71,9 +74,14 @@ public class SellerServiceImpl implements SellerService {
             sellerSignUpResponseDTO.setId(userRecord.getUid());
             sellerSignUpResponseDTO.setCreatedTime(collectionsApiFuture.get().getUpdateTime().toDate());
             return ResponseUtil.generateSuccessResponse("Seller Registered Successfully", sellerSignUpResponseDTO);
+        } catch (FirebaseAuthException e) {
+            return ResponseUtil.generateErrorResponse("Firebase Authentication Error: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (FirestoreException | ExecutionException | InterruptedException e) {
+            return ResponseUtil.generateErrorResponse("Firestore Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.generateErrorResponse("Invalid Input: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseUtil.generateErrorResponse(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseUtil.generateErrorResponse("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
