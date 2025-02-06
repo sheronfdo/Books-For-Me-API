@@ -11,11 +11,4 @@ public class SellerSignUpDTO {
     private String email;
     private String passwordHash;
     private String phoneNumber;
-    private String addressStreet;
-    private String addressCity;
-    private String addressState;
-    private String addressPostalCode;
-    private String addressCountry;
-    private String companyName;
-    private String businessRegistrationNumber;
 }

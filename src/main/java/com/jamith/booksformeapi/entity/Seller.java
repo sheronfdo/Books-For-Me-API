@@ -13,11 +13,12 @@ public class Seller {
     private SellerType sellerType;
     private String fullNameOrRepresentative;
     private String email;
-    private String passwordHash;
     private String phoneNumber;
     private Map<String, String> address;
     private Map<String, String> businessDetails;
     private boolean verified;
     private Date createdAt;
     private UserRole role;
+    private Date updatedAt;
+    private String imageUrl;
 }
