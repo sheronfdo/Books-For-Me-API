@@ -1,6 +1,7 @@
 package com.jamith.booksformeapi.controller;
 
 import com.jamith.booksformeapi.dto.requestDTO.AddNewBookDTO;
+import com.jamith.booksformeapi.dto.requestDTO.AddNewBookStockDTO;
 import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpDTO;
 import com.jamith.booksformeapi.service.BookService;
 import com.jamith.booksformeapi.service.SellerService;
@@ -23,10 +24,21 @@ public class BookController {
     private BookService bookService;
 
     @PostMapping("/addNewBook")
-    public ResponseEntity<Object> registerSeller(@RequestBody AddNewBookDTO addNewBookDTO) {
+    public ResponseEntity<Object> addNewBook(@RequestBody AddNewBookDTO addNewBookDTO) {
         try {
             log.info("add new book: " + addNewBookDTO);
             return bookService.addNewBook(addNewBookDTO);
+        } catch (Exception e) {
+            log.error("Unexpected error during book registration: ", e);
+            return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/addNewBookStock")
+    public ResponseEntity<Object> addNewBookStock(@RequestBody AddNewBookStockDTO addNewBookStockDTO) {
+        try {
+            log.info("add new book stock: " + addNewBookStockDTO);
+            return bookService.addNewBookStock(addNewBookStockDTO);
         } catch (Exception e) {
             log.error("Unexpected error during book registration: ", e);
             return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

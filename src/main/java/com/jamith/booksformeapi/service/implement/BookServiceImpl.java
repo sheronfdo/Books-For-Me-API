@@ -6,8 +6,10 @@ import com.google.cloud.firestore.FirestoreException;
 import com.google.cloud.firestore.WriteResult;
 import com.google.firebase.cloud.FirestoreClient;
 import com.jamith.booksformeapi.dto.requestDTO.AddNewBookDTO;
+import com.jamith.booksformeapi.dto.requestDTO.AddNewBookStockDTO;
 import com.jamith.booksformeapi.dto.responseDTO.BookAddResponseDTO;
 import com.jamith.booksformeapi.entity.Book;
+import com.jamith.booksformeapi.entity.BookStock;
 import com.jamith.booksformeapi.service.BookService;
 import com.jamith.booksformeapi.utils.DateUtil;
 import com.jamith.booksformeapi.utils.ResponseUtil;
@@ -38,6 +40,28 @@ public class BookServiceImpl implements BookService {
             bookAddResponseDTO.setId(documentId);
             bookAddResponseDTO.setCreatedTime(collectionsApiFuture.get().getUpdateTime().toDate());
             return ResponseUtil.generateSuccessResponse("Book Added Successfully", bookAddResponseDTO);
+        } catch (FirestoreException | ExecutionException | InterruptedException e) {
+            return ResponseUtil.generateErrorResponse("Firestore Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.generateErrorResponse("Invalid Input: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return ResponseUtil.generateErrorResponse("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Object> addNewBookStock(AddNewBookStockDTO addNewBookStockDTO) {
+        try {
+            BookStock bookStock = modelMapper.map(addNewBookStockDTO, BookStock.class);
+            bookStock.setCreatedAt(DateUtil.fromFirestoreTimestamp());
+            bookStock.setUpdatedAt(DateUtil.fromFirestoreTimestamp());
+
+            String documentId = db.collection("bookStocks").document().getId();
+            ApiFuture<WriteResult> collectionsApiFuture = db.collection("bookStocks").document(documentId).set(bookStock);
+            BookAddResponseDTO bookAddResponseDTO = new BookAddResponseDTO();
+            bookAddResponseDTO.setId(documentId);
+            bookAddResponseDTO.setCreatedTime(collectionsApiFuture.get().getUpdateTime().toDate());
+            return ResponseUtil.generateSuccessResponse("Book Stock Added Successfully", bookAddResponseDTO);
         } catch (FirestoreException | ExecutionException | InterruptedException e) {
             return ResponseUtil.generateErrorResponse("Firestore Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (IllegalArgumentException e) {
