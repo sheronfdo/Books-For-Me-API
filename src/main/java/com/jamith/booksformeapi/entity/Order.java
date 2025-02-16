@@ -1,6 +1,7 @@
 package com.jamith.booksformeapi.entity;
 
 import com.jamith.booksformeapi.dto.requestDTO.OrderItem;
+import com.jamith.booksformeapi.dto.requestDTO.PaymentDetailsDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,7 @@ public class Order {
     private double totalPrice;
     private String paymentStatus;
     private String status;
+    private PaymentDetailsDTO paymentDetailsDTO;
     private Date orderDate;
     private Date createdAt;
     private Date updatedAt;

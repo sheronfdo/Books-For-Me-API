@@ -14,5 +14,6 @@ public class PaymentStatusDTO {
 
     private String orderId;
     private PaymentStatus paymentStatus;
+    private PaymentDetailsDTO paymentDetailsDTO;
 
 }

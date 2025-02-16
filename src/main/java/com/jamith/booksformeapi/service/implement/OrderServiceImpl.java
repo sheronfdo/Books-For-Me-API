@@ -70,7 +70,9 @@ public class OrderServiceImpl implements OrderService {
 
             DocumentSnapshot document = future.get();
             if (document.exists()) {
-                order = document.toObject(Order.class); // Convert the document to a Seller object
+                order = document.toObject(Order.class);
+                order.setPaymentDetailsDTO(paymentStatusDTO.getPaymentDetailsDTO());
+
             } else {
                 System.out.println("No such document!");
                 return ResponseUtil.generateErrorResponse("Seller Not Found", HttpStatus.BAD_REQUEST);
@@ -88,6 +90,7 @@ public class OrderServiceImpl implements OrderService {
                     cartItemDTO.setOrderId(orderId);
                     db.collection("customers").document(order.getCustomerId()).collection("orderItems").add(cartItemDTO);
                     db.collection("sellers").document(cartItemDTO.getSellerId()).collection("orderItems").add(cartItemDTO);
+                    db.collection("customers").document(order.getCustomerId()).collection("cart").document(cartItemDTO.getCartItemId()).delete();
                 });
                 OrderResponseDTO orderResponseDTO = new OrderResponseDTO();
                 orderResponseDTO.setId(orderId);
