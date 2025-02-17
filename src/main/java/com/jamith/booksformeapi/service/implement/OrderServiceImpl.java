@@ -16,6 +16,7 @@ import com.jamith.booksformeapi.utils.DateUtil;
 import com.jamith.booksformeapi.utils.OrderStatus;
 import com.jamith.booksformeapi.utils.PaymentStatus;
 import com.jamith.booksformeapi.utils.ResponseUtil;
+import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
+@Log4j2
 @Service
 public class OrderServiceImpl implements OrderService {
     ModelMapper modelMapper = new ModelMapper();
@@ -72,7 +74,7 @@ public class OrderServiceImpl implements OrderService {
             if (document.exists()) {
                 order = document.toObject(Order.class);
                 order.setPaymentDetailsDTO(paymentStatusDTO.getPaymentDetailsDTO());
-
+                log.debug("order object: " + order);
             } else {
                 System.out.println("No such document!");
                 return ResponseUtil.generateErrorResponse("Seller Not Found", HttpStatus.BAD_REQUEST);
@@ -83,15 +85,22 @@ public class OrderServiceImpl implements OrderService {
                 order.setStatus(OrderStatus.ORDER_CONFIRMED.name());
                 order.setPaymentStatus(PaymentStatus.PAYMENT_STATUS_COMPLETED.name());
                 order.setUpdatedAt(DateUtil.fromFirestoreTimestamp());
-
-                ApiFuture<WriteResult> orders = db.collection("orders").document(orderId).set(order, SetOptions.merge());
-
                 order.getCartItems().stream().forEach(cartItemDTO -> {
                     cartItemDTO.setOrderId(orderId);
-                    db.collection("customers").document(order.getCustomerId()).collection("orderItems").add(cartItemDTO);
-                    db.collection("sellers").document(cartItemDTO.getSellerId()).collection("orderItems").add(cartItemDTO);
-                    db.collection("customers").document(order.getCustomerId()).collection("cart").document(cartItemDTO.getCartItemId()).delete();
+                    cartItemDTO.setStatus(OrderStatus.ORDER_CONFIRMED.name());
+                    String documentId = db.collection("orders").document(orderId).collection("orderItems")
+                            .document().getId();
+                    db.collection("orders").document(orderId).collection("orderItems")
+                            .document(documentId).set(cartItemDTO);
+                    db.collection("customers").document(order.getCustomerId()).collection("orderItems")
+                            .document(documentId).set(cartItemDTO);
+                    db.collection("sellers").document(cartItemDTO.getSellerId()).collection("orderItems")
+                            .document(documentId).set(cartItemDTO);
+                    db.collection("customers").document(order.getCustomerId()).collection("cart")
+                            .document(cartItemDTO.getCartItemId()).delete();
                 });
+                order.setCartItems(null);
+                ApiFuture<WriteResult> orders = db.collection("orders").document(orderId).set(order, SetOptions.merge());
                 OrderResponseDTO orderResponseDTO = new OrderResponseDTO();
                 orderResponseDTO.setId(orderId);
                 orderResponseDTO.setCreatedTime(orders.get().getUpdateTime().toDate());

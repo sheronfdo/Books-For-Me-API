@@ -13,6 +13,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 public class OrderItem implements Serializable {
+    private String orderItemId;
     private String cartItemId;
     private String orderId;
     private String bookId;
@@ -22,4 +23,5 @@ public class OrderItem implements Serializable {
     private double price;
     private int quantity;
     private String title;
+    private String status;
 }
