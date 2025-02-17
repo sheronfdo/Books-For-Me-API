@@ -11,6 +11,7 @@ import com.jamith.booksformeapi.entity.Customer;
 import com.jamith.booksformeapi.entity.Order;
 import com.jamith.booksformeapi.entity.Seller;
 import com.jamith.booksformeapi.enums.UserRole;
+import com.jamith.booksformeapi.service.NotificationService;
 import com.jamith.booksformeapi.service.OrderService;
 import com.jamith.booksformeapi.utils.DateUtil;
 import com.jamith.booksformeapi.utils.OrderStatus;
@@ -18,6 +19,7 @@ import com.jamith.booksformeapi.utils.PaymentStatus;
 import com.jamith.booksformeapi.utils.ResponseUtil;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,9 @@ import java.util.concurrent.ExecutionException;
 public class OrderServiceImpl implements OrderService {
     ModelMapper modelMapper = new ModelMapper();
     Firestore db = FirestoreClient.getFirestore();
+
+    @Autowired
+    NotificationService notificationService;
 
 
     @Override
@@ -98,7 +103,37 @@ public class OrderServiceImpl implements OrderService {
                             .document(documentId).set(cartItemDTO);
                     db.collection("customers").document(order.getCustomerId()).collection("cart")
                             .document(cartItemDTO.getCartItemId()).delete();
+                    try {
+                        DocumentReference sellerDocRef = db.collection("sellers").document(cartItemDTO.getSellerId());
+                        ApiFuture<DocumentSnapshot> sellerFuture = sellerDocRef.get();
+                        DocumentSnapshot sellerDoc = sellerFuture.get();
+                        String sellerFcmToken = sellerDoc.getString("fcmToken");
+
+                        if (sellerFcmToken != null) {
+                            notificationService.sendNotificationToToken(
+                                    sellerFcmToken,
+                                    "New Order Confirmed",
+                                    "You have received a new order. Order ID: " + orderId
+                            );
+                        }
+                    } catch (FirestoreException | ExecutionException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 });
+
+                DocumentReference customerDocRef = db.collection("customers").document(order.getCustomerId());
+                ApiFuture<DocumentSnapshot> customerFuture = customerDocRef.get();
+                DocumentSnapshot customerDoc = customerFuture.get();
+                String customerFcmToken = customerDoc.getString("fcmToken");
+
+                if (customerFcmToken != null) {
+                    notificationService.sendNotificationToToken(
+                            customerFcmToken,
+                            "Order Confirmed",
+                            "Your order has been confirmed. Order ID: " + orderId
+                    );
+                }
+
                 order.setCartItems(null);
                 ApiFuture<WriteResult> orders = db.collection("orders").document(orderId).set(order, SetOptions.merge());
                 OrderResponseDTO orderResponseDTO = new OrderResponseDTO();
@@ -135,4 +170,6 @@ public class OrderServiceImpl implements OrderService {
             return ResponseUtil.generateErrorResponse("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 }
