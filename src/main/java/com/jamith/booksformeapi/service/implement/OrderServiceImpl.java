@@ -4,18 +4,15 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.jamith.booksformeapi.dto.requestDTO.OrderDTO;
+import com.jamith.booksformeapi.dto.requestDTO.OrderStatusDTO;
 import com.jamith.booksformeapi.dto.requestDTO.PaymentStatusDTO;
-import com.jamith.booksformeapi.dto.responseDTO.CustomerSignUpResponseDTO;
 import com.jamith.booksformeapi.dto.responseDTO.OrderResponseDTO;
-import com.jamith.booksformeapi.entity.Customer;
 import com.jamith.booksformeapi.entity.Order;
-import com.jamith.booksformeapi.entity.Seller;
-import com.jamith.booksformeapi.enums.UserRole;
 import com.jamith.booksformeapi.service.NotificationService;
 import com.jamith.booksformeapi.service.OrderService;
 import com.jamith.booksformeapi.utils.DateUtil;
-import com.jamith.booksformeapi.utils.OrderStatus;
-import com.jamith.booksformeapi.utils.PaymentStatus;
+import com.jamith.booksformeapi.enums.OrderStatus;
+import com.jamith.booksformeapi.enums.PaymentStatus;
 import com.jamith.booksformeapi.utils.ResponseUtil;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -24,7 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Log4j2
@@ -82,7 +80,7 @@ public class OrderServiceImpl implements OrderService {
                 log.debug("order object: " + order);
             } else {
                 System.out.println("No such document!");
-                return ResponseUtil.generateErrorResponse("Seller Not Found", HttpStatus.BAD_REQUEST);
+                return ResponseUtil.generateErrorResponse("Order Not Found", HttpStatus.BAD_REQUEST);
             }
 
 
@@ -171,5 +169,71 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    @Override
+    public ResponseEntity<Object> orderStatus(OrderStatusDTO orderStatusDTO) {
+        try {
+            Order order;
+            String orderId = orderStatusDTO.getOrderId();
 
+            DocumentReference docRef = db.collection("orders").document(orderId);
+            ApiFuture<DocumentSnapshot> future = docRef.get();
+
+            DocumentSnapshot document = future.get();
+            if (document.exists()) {
+                order = document.toObject(Order.class);
+                log.debug("order object: " + order);
+            } else {
+                System.out.println("No such document!");
+                return ResponseUtil.generateErrorResponse("Order Not Found", HttpStatus.BAD_REQUEST);
+            }
+
+            DocumentReference orderRef = db
+                    .collection("orders")
+                    .document(orderStatusDTO.getOrderId())
+                    .collection("orderItems")
+                    .document(orderStatusDTO.getOrderItemId());
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("status", orderStatusDTO.getPaymentStatus());
+
+            ApiFuture<WriteResult> writeResult = orderRef.update(updates);
+            WriteResult result = writeResult.get();
+            log.debug("Order status updated at: " + result.getUpdateTime());
+
+            DocumentReference sellerorderRef = db
+                    .collection("sellers")
+                    .document(orderStatusDTO.getSellerId())
+                    .collection("orderItems")
+                    .document(orderStatusDTO.getOrderItemId());
+            Map<String, Object> sellerupdates = new HashMap<>();
+            sellerupdates.put("status", orderStatusDTO.getPaymentStatus());
+
+            ApiFuture<WriteResult> sellerwriteResult = sellerorderRef.update(sellerupdates);
+            WriteResult sellerresult = sellerwriteResult.get();
+
+            log.debug("Seller status updated at: " + sellerresult.getUpdateTime());
+
+            DocumentReference customerorderRef = db
+                    .collection("customers")
+                    .document(order.getCustomerId())
+                    .collection("orderItems")
+                    .document(orderStatusDTO.getOrderItemId());
+            Map<String, Object> customerupdates = new HashMap<>();
+            customerupdates.put("status", orderStatusDTO.getPaymentStatus());
+
+            ApiFuture<WriteResult> customerwriteResult = customerorderRef.update(customerupdates);
+            WriteResult customerresult = customerwriteResult.get();
+            log.debug("Customer status updated at: " + customerresult.getUpdateTime());
+
+            OrderResponseDTO orderResponseDTO = new OrderResponseDTO();
+            orderResponseDTO.setId(orderId);
+            orderResponseDTO.setCreatedTime(result.getUpdateTime().toDate());
+            return ResponseUtil.generateSuccessResponse("Order Status Update Successful.", orderResponseDTO);
+        } catch (FirestoreException | ExecutionException | InterruptedException e) {
+            return ResponseUtil.generateErrorResponse("Firestore Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.generateErrorResponse("Invalid Input: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return ResponseUtil.generateErrorResponse("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

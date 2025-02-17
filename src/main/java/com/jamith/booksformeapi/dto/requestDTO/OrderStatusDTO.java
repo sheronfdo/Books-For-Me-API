@@ -1,5 +1,6 @@
 package com.jamith.booksformeapi.dto.requestDTO;
 
+import com.jamith.booksformeapi.enums.OrderStatus;
 import com.jamith.booksformeapi.enums.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,10 +11,9 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class PaymentStatusDTO {
-
+public class OrderStatusDTO {
     private String orderId;
-    private PaymentStatus paymentStatus;
-    private PaymentDetailsDTO paymentDetailsDTO;
-
+    private String orderItemId;
+    private String sellerId;
+    private OrderStatus paymentStatus;
 }

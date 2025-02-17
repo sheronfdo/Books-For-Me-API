@@ -2,6 +2,7 @@ package com.jamith.booksformeapi.controller;
 
 
 import com.jamith.booksformeapi.dto.requestDTO.OrderDTO;
+import com.jamith.booksformeapi.dto.requestDTO.OrderStatusDTO;
 import com.jamith.booksformeapi.dto.requestDTO.PaymentStatusDTO;
 import com.jamith.booksformeapi.service.OrderService;
 import com.jamith.booksformeapi.utils.ResponseUtil;
@@ -37,6 +38,17 @@ public class OrderController {
         try {
             log.info("Make update order: " + paymentStatusDTO);
             return orderService.paymentStatus(paymentStatusDTO);
+        } catch (Exception e) {
+            log.error("Unexpected error during seller registration: ", e);
+            return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/orderStatus")
+    ResponseEntity<Object> orderStatusUpdate(@RequestBody OrderStatusDTO orderStatusDTO) {
+        try {
+            log.info("Make status update order: " + orderStatusDTO);
+            return orderService.orderStatus(orderStatusDTO);
         } catch (Exception e) {
             log.error("Unexpected error during seller registration: ", e);
             return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
