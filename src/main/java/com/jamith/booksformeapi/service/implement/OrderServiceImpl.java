@@ -224,6 +224,17 @@ public class OrderServiceImpl implements OrderService {
             WriteResult customerresult = customerwriteResult.get();
             log.debug("Customer status updated at: " + customerresult.getUpdateTime());
 
+            DocumentReference customerDocRef = db.collection("customers").document(order.getCustomerId());
+            ApiFuture<DocumentSnapshot> customerFuture = customerDocRef.get();
+            DocumentSnapshot customerDoc = customerFuture.get();
+            String customerFcmToken = customerDoc.getString("fcmToken");
+
+            notificationService.sendNotificationToToken(
+                    customerFcmToken,
+                    "Order Status Updated",
+                    "Your order status has updated. Order ID: " + orderId
+            );
+
             OrderResponseDTO orderResponseDTO = new OrderResponseDTO();
             orderResponseDTO.setId(orderId);
             orderResponseDTO.setCreatedTime(result.getUpdateTime().toDate());
