@@ -1,12 +1,14 @@
 package com.jamith.booksformeapi.service.implement;
 
 import com.google.api.core.ApiFuture;
+import com.google.apps.card.v1.OnClick;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.jamith.booksformeapi.dto.requestDTO.OrderDTO;
 import com.jamith.booksformeapi.dto.requestDTO.OrderStatusDTO;
 import com.jamith.booksformeapi.dto.requestDTO.PaymentStatusDTO;
 import com.jamith.booksformeapi.dto.responseDTO.OrderResponseDTO;
+import com.jamith.booksformeapi.entity.BookStock;
 import com.jamith.booksformeapi.entity.Order;
 import com.jamith.booksformeapi.service.NotificationService;
 import com.jamith.booksformeapi.service.OrderService;
@@ -187,25 +189,51 @@ public class OrderServiceImpl implements OrderService {
                 return ResponseUtil.generateErrorResponse("Order Not Found", HttpStatus.BAD_REQUEST);
             }
 
+            DocumentReference sellerorderRef = db
+                    .collection("sellers")
+                    .document(orderStatusDTO.getSellerId())
+                    .collection("orderItems")
+                    .document(orderStatusDTO.getOrderItemId());
+
+            if (orderStatusDTO.getOrderStatus().equals(OrderStatus.ORDER_APPROVED)) {
+                ApiFuture<DocumentSnapshot> sellerOrderItem = sellerorderRef.get();
+                DocumentSnapshot sellerOrderItemDocument = sellerOrderItem.get();
+                if (sellerOrderItemDocument.exists()) {
+                    String bookStockId = sellerOrderItemDocument.getString("bookStockId");
+                    BookStock bookStock;
+                    DocumentReference bookRef = db.collection("bookStocks").document(bookStockId);
+                    ApiFuture<DocumentSnapshot> bookStockRef = bookRef.get();
+                    DocumentSnapshot bookStockDocument = bookStockRef.get();
+                    if (bookStockDocument.exists()) {
+                        bookStock = bookStockDocument.toObject(BookStock.class);
+                        int orderQuantity = sellerOrderItemDocument.get("quantity", int.class);
+                        Map<String, Object> stocks = new HashMap<>();
+                        stocks.put("stock", bookStock.getStock() - orderQuantity);
+                        bookRef.update(stocks);
+                    } else {
+                        return ResponseUtil.generateErrorResponse("Book Stock Not Found", HttpStatus.BAD_REQUEST);
+                    }
+                } else {
+                    return ResponseUtil.generateErrorResponse("Order Item Not Found", HttpStatus.BAD_REQUEST);
+                }
+            }
+
+
             DocumentReference orderRef = db
                     .collection("orders")
                     .document(orderStatusDTO.getOrderId())
                     .collection("orderItems")
                     .document(orderStatusDTO.getOrderItemId());
             Map<String, Object> updates = new HashMap<>();
-            updates.put("status", orderStatusDTO.getPaymentStatus());
+            updates.put("status", orderStatusDTO.getOrderStatus());
 
             ApiFuture<WriteResult> writeResult = orderRef.update(updates);
             WriteResult result = writeResult.get();
             log.debug("Order status updated at: " + result.getUpdateTime());
 
-            DocumentReference sellerorderRef = db
-                    .collection("sellers")
-                    .document(orderStatusDTO.getSellerId())
-                    .collection("orderItems")
-                    .document(orderStatusDTO.getOrderItemId());
+
             Map<String, Object> sellerupdates = new HashMap<>();
-            sellerupdates.put("status", orderStatusDTO.getPaymentStatus());
+            sellerupdates.put("status", orderStatusDTO.getOrderStatus());
 
             ApiFuture<WriteResult> sellerwriteResult = sellerorderRef.update(sellerupdates);
             WriteResult sellerresult = sellerwriteResult.get();
@@ -218,7 +246,7 @@ public class OrderServiceImpl implements OrderService {
                     .collection("orderItems")
                     .document(orderStatusDTO.getOrderItemId());
             Map<String, Object> customerupdates = new HashMap<>();
-            customerupdates.put("status", orderStatusDTO.getPaymentStatus());
+            customerupdates.put("status", orderStatusDTO.getOrderStatus());
 
             ApiFuture<WriteResult> customerwriteResult = customerorderRef.update(customerupdates);
             WriteResult customerresult = customerwriteResult.get();
