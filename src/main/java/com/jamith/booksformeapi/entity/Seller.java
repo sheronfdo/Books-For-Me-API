@@ -14,7 +14,7 @@ public class Seller {
     private String fullNameOrRepresentative;
     private String email;
     private String phoneNumber;
-    private Map<String, String> address;
+    private Map<String, Object> address;
     private Map<String, String> businessDetails;
     private boolean verified;
     private Date createdAt;

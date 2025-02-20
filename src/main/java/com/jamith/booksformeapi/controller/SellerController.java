@@ -1,9 +1,6 @@
 package com.jamith.booksformeapi.controller;
 
-import com.jamith.booksformeapi.dto.requestDTO.SellerAddressDTO;
-import com.jamith.booksformeapi.dto.requestDTO.SellerImageDTO;
-import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpBrDTO;
-import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpDTO;
+import com.jamith.booksformeapi.dto.requestDTO.*;
 import com.jamith.booksformeapi.service.SellerService;
 import com.jamith.booksformeapi.utils.ResponseUtil;
 import lombok.extern.log4j.Log4j2;
@@ -58,6 +55,17 @@ public class SellerController {
         try {
             log.info("setSellerImage seller: " + sellerImageDTO);
             return sellerService.setSellerImage(sellerImageDTO);
+        } catch (Exception e) {
+            log.error("Unexpected error during seller registration: ", e);
+            return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/updateProfile")
+    public ResponseEntity<Object> sellerupdate(@RequestBody SellerUpdateDTO sellerUpdateDTO) {
+        try {
+            log.info("setSellerImage update: " + sellerUpdateDTO);
+            return sellerService.updateSeller(sellerUpdateDTO);
         } catch (Exception e) {
             log.error("Unexpected error during seller registration: ", e);
             return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

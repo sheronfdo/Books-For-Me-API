@@ -6,10 +6,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
-import com.jamith.booksformeapi.dto.requestDTO.SellerAddressDTO;
-import com.jamith.booksformeapi.dto.requestDTO.SellerImageDTO;
-import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpBrDTO;
-import com.jamith.booksformeapi.dto.requestDTO.SellerSignUpDTO;
+import com.jamith.booksformeapi.dto.requestDTO.*;
 import com.jamith.booksformeapi.dto.responseDTO.SellerSignUpResponseDTO;
 import com.jamith.booksformeapi.entity.Seller;
 import com.jamith.booksformeapi.service.SellerService;
@@ -87,13 +84,15 @@ public class SellerServiceImpl implements SellerService {
                 System.out.println("No such document!");
                 return ResponseUtil.generateErrorResponse("Seller Not Found", HttpStatus.BAD_REQUEST);
             }
+            GeoPoint geoPoint = new GeoPoint(sellerAddress.getLatitude(), sellerAddress.getLongitude());
 
-            Map<String, String> address = new HashMap<>();
+            Map<String, Object> address = new HashMap<>();
             address.put("street", sellerAddress.getAddressStreet());
             address.put("city", sellerAddress.getAddressCity());
             address.put("state", sellerAddress.getAddressState());
             address.put("postalCode", sellerAddress.getAddressPostalCode());
             address.put("country", sellerAddress.getAddressCountry());
+            address.put("location", geoPoint);
 
             seller.setSellerId(sellerAddress.getId());
             seller.setAddress(address);
@@ -175,6 +174,58 @@ public class SellerServiceImpl implements SellerService {
             sellerSignUpResponseDTO.setId(sellerImageDTO.getId());
             sellerSignUpResponseDTO.setCreatedTime(collectionsApiFuture.get().getUpdateTime().toDate());
             return ResponseUtil.generateSuccessResponse("Seller Image Added Successfully", sellerSignUpResponseDTO);
+        } catch (FirestoreException | ExecutionException | InterruptedException e) {
+            return ResponseUtil.generateErrorResponse("Firestore Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.generateErrorResponse("Invalid Input: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return ResponseUtil.generateErrorResponse("Internal Server Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @Override
+    public ResponseEntity<Object> updateSeller(SellerUpdateDTO sellerUpdateDTO) {
+        try {
+            Seller seller;
+            DocumentReference docRef = db.collection("sellers").document(sellerUpdateDTO.getId());
+            ApiFuture<DocumentSnapshot> future = docRef.get();
+
+            DocumentSnapshot document = future.get();
+            if (document.exists()) {
+                seller = document.toObject(Seller.class); // Convert the document to a Seller object
+            } else {
+                System.out.println("No such document!");
+                return ResponseUtil.generateErrorResponse("Seller Not Found", HttpStatus.BAD_REQUEST);
+            }
+            Map<String, String> businessDetails = new HashMap<>();
+            businessDetails.put("companyName", sellerUpdateDTO.getCompanyName());
+            businessDetails.put("businessRegistrationNumber", sellerUpdateDTO.getRegistrationNumber());
+            businessDetails.put("documentUrl", seller.getBusinessDetails().get("documentUrl"));
+
+            Map<String, Object> address = new HashMap<>();
+            address.put("street", sellerUpdateDTO.getStreet());
+            address.put("city", sellerUpdateDTO.getCity());
+            address.put("state", sellerUpdateDTO.getState());
+            address.put("postalCode", sellerUpdateDTO.getPostalCode());
+            address.put("country", sellerUpdateDTO.getCountry());
+            address.put("location", seller.getAddress().get("location"));
+
+
+            seller.setSellerId(sellerUpdateDTO.getId());
+            seller.setImageUrl(sellerUpdateDTO.getImageUrl());
+            seller.setFullNameOrRepresentative(sellerUpdateDTO.getFullName());
+            seller.setPhoneNumber(sellerUpdateDTO.getPhoneNumber());
+            seller.setBusinessDetails(businessDetails);
+            seller.setAddress(address);
+
+            seller.setUpdatedAt(DateUtil.fromFirestoreTimestamp());
+
+            ApiFuture<WriteResult> collectionsApiFuture = db.collection("sellers").document(seller.getSellerId()).set(seller, SetOptions.merge());
+            SellerSignUpResponseDTO sellerSignUpResponseDTO = new SellerSignUpResponseDTO();
+            sellerSignUpResponseDTO.setId(sellerUpdateDTO.getId());
+            sellerSignUpResponseDTO.setCreatedTime(collectionsApiFuture.get().getUpdateTime().toDate());
+            return ResponseUtil.generateSuccessResponse("Seller Update Successfully", sellerSignUpResponseDTO);
         } catch (FirestoreException | ExecutionException | InterruptedException e) {
             return ResponseUtil.generateErrorResponse("Firestore Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (IllegalArgumentException e) {

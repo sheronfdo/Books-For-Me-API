@@ -10,4 +10,6 @@ public class SellerAddressDTO {
     private String addressState;
     private String addressPostalCode;
     private String addressCountry;
+    private double latitude;
+    private double longitude;
 }
