@@ -1,6 +1,7 @@
 package com.jamith.booksformeapi.controller;
 
 import com.jamith.booksformeapi.dto.requestDTO.CustomerSignUpDTO;
+import com.jamith.booksformeapi.dto.requestDTO.CustomerUpdateDTO;
 import com.jamith.booksformeapi.service.CustomerService;
 import com.jamith.booksformeapi.utils.ResponseUtil;
 import lombok.extern.log4j.Log4j2;
@@ -23,8 +24,19 @@ public class CustomerController {
     @PostMapping("/register")
     public ResponseEntity<Object> registerCustomer(@RequestBody CustomerSignUpDTO customerSignUpDTO) {
         try {
-            log.info("Customer seller: " + customerSignUpDTO);
+            log.info("Customer : " + customerSignUpDTO);
             return customerService.customerSignUp(customerSignUpDTO);
+        } catch (Exception e) {
+            log.error("Unexpected error during customer registration: ", e);
+            return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/updateProfile")
+    public ResponseEntity<Object> updateCustomer(@RequestBody CustomerUpdateDTO customerUpdateDTO) {
+        try {
+            log.info("Customer update : " + customerUpdateDTO);
+            return customerService.updateCustomer(customerUpdateDTO);
         } catch (Exception e) {
             log.error("Unexpected error during customer registration: ", e);
             return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
