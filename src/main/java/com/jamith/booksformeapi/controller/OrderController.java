@@ -37,7 +37,13 @@ public class OrderController {
     ResponseEntity<Object> paymentStatusUpdate(@RequestBody PaymentStatusDTO paymentStatusDTO) {
         try {
             log.info("Make update order: " + paymentStatusDTO);
-            return orderService.paymentStatus(paymentStatusDTO);
+
+            ResponseEntity<Object> response = orderService.paymentStatus(paymentStatusDTO);
+
+            log.debug("After calling orderService.paymentStatus()");
+
+            return response;
+
         } catch (Exception e) {
             log.error("Unexpected error during seller registration: ", e);
             return ResponseUtil.generateErrorResponse("Unexpected error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
